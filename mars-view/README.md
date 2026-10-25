@@ -1,88 +1,134 @@
 # Project AL-G
 
-A wplace-style map of Mars that everyone shares. The planet is a true-scale globe; zoom in and it
-becomes a grid of 1 m tiles. Anyone can look around and click any farm to see how it's running.
-Register and log in (top right) to build your own Spirulina domes (each on a 10 × 10 tile plot),
-one new dome per day.
-Farms built side by side are joined by a tunnel. Each farm runs a simulation on the server
-(temperature, light, growth, pH, oxygen and power, driven by real Curiosity weather), and the top bar
-shows the oxygen collected by every farm.
+A shared, true-scale Mars where everyone builds greenhouse domes and grows Spirulina algae to make oxygen
+together. It runs on real Curiosity weather and published algae research, so if your colony dies, it's
+for a real reason.
 
-## How to play
+## Team
 
-New accounts are walked through it by **Percy the rover** (a bar along the bottom), 13 steps with a
-tip each. Each step brings what it talks about on screen: it flies you to Gale Crater, then to your
-dome, opens the vitals, the microscope and the teamwork drawer, and points at the right button. Steps
-that need you to do something move on once you've done it. The server remembers each player's step;
-accounts made before the tutorial existed don't get it. ✕ hides Percy; click the small rover to carry on.
+[Genesis](https://github.com/gencsis), [Stacey Nguyen](https://github.com/staceytyn)
 
-1. Register and log in. You start with **one starter culture**.
-2. Build a dome. Inside are four reactor panels, all empty.
-3. Click a clear panel and fill it with your starter. The culture starts thin (0.06 g/L).
-4. Wait. It grows slowly, over days, and you can watch the water turn from clear to green to
-   **muddy** (0.6 g/L) in the panel's microscope.
-5. Once a panel is muddy, take a starter from it (10 % of the panel, topped back up with fresh
-   medium) and use it to fill another panel, in the same dome or a new one. More panels, more oxygen.
-6. Keep them healthy: lamps, temperature, CO₂, nitrate, and don't let them freeze.
-7. Watch for **dust storms** (a dust icon under the oxygen total, and a tan haze on the globe). They
-   dim the sun, which cuts both the light on your panels and your solar power: turn up the lamps.
+## About
 
-## Teamwork
+**What we built.** Project AL-G is a wplace-style multiplayer map of Mars. The whole planet is a
+true-scale globe; zoom in and it becomes a grid of 1 m tiles where players build domes (one new dome a
+day). Each dome holds four flat-panel photobioreactors. You start with one starter culture of Spirulina:
+fill a panel, wait days for the water to turn "muddy", take a starter from it and fill the next panel.
+A counter shows the oxygen made by every farm on the server and how many people that would keep
+breathing.
 
-- **Give starters:** open anyone's dome and click an empty panel to fill it with one of your starters.
-  Helpers are thanked in the dome's details, and your account drawer counts what you've given.
-- **Ask for help:** in your account drawer, tick "Ask other players for starters". Your domes with an
-  empty panel then show a green **+** to other players.
-- **Caretakers:** add a player by name in your account drawer. Caretakers can change settings and add
-  nutrients in all your domes (and give starters, like anyone). Harvesting, draining, taking starters,
-  turning and removing a dome stay with the owner, so nobody can wreck your colony.
+**The problem.** Any plan for people beyond Earth has to answer where the air comes from. Algae can
+make oxygen and food and help recycle waste, but it's fragile: temperature, light, pH and nutrients all
+have to stay in range, and Mars fights every one of them. We wanted anyone to experience that, with
+every number backed by real data.
 
-## Run
+**What it does**
+- **Real simulation, running all the time.** The server runs every farm in real time on the real Mars
+  clock: water and air temperature (from Curiosity's measured weather), sunlight from the sun's position,
+  light that dims as the culture thickens, growth and night-time respiration, nitrate, carbon and pH,
+  power and battery, oxygen made and collected. Farms keep running when nobody is watching.
+- **Accurate vitals.** An old-system-monitor style panel shows oxygen made, CO₂ exchange (taking
+  CO₂ in = growing), a water temperature dial with a heater control, a growth chart since the culture
+  started, and a simulated microscope where you watch filaments multiply and the water get murkier.
+- **Dust storms.** come mostly in Mars' real dusty season, dim the sun for panels and solar power, and
+  make you turn up the lamps.
+- **Teamwork.** Give a spare starter to someone's empty panel, ask for help (a green + on your dome), or
+  let caretakers change your settings. Destructive actions stay with the owner.
 
-Start the server (Node 22.13 or newer, nothing to install), then open http://localhost:8000.
+**How it's built**
+- **Front end:** plain HTML, CSS and JavaScript, no framework. WebGL2 draws the globe and tile grid; a 2D
+  canvas draws the dome art, tunnels between neighbouring domes and shadows from the real sun. Artist drawn and edited sprites.
+- **Server:** Node.js with its built-in SQLite (`node:sqlite`), no npm packages. Accounts, shared farms, permissions, and each farm's simulation in fixed
+  120 s steps so results don't depend on how often anyone visits.
+- **Simulation:** one JavaScript model shared by the server and the page, with a test suite (units,
+  darkness, nutrients, power failure, temperature stress and recovery, mass balance, dust storms).
+- **Art:** domes, tunnels, the lab inside the dome and the UI were designed by our team in Figma.
 
-    node server.js                 # PORT=3000 node server.js for another port
-    BUILD_EVERY_HOURS=0 node server.js   # no daily dome limit (for testing)
+### External APIs (exactly two, both NASA)
 
-Demo mode (time runs 600 × faster, so a panel turns muddy in about half an hour; keep it in its own
-database because farms run ahead of real time):
+1. **NASA Mars Trek map tiles** (live): the globe's terrain streams from `trek.nasa.gov`, layer
+   `Mars_Viking_MDIM21_ClrMosaic_global_232m` (Viking MDIM 2.1 colour mosaic, 232 m per pixel).
+   If it can't be reached, a bundled map (`assets/mars-basemap.jpg`) is used.
+2. **NASA Curiosity (MSL) weather feed** (downloaded once):
+   `mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json`, REMS data by CAB-INTA/CSIC.
+   `tools/prepare_weather.py` kept one Mars year of Gale Crater temperatures (sols 4270–4995,
+   Aug 2024 – Aug 2026) as `data/weather/rems_gale.json`. Missing readings stay empty; suspect ones
+   are flagged and skipped.
 
-    TIME_SPEED=600 BUILD_EVERY_HOURS=0 DB=data/demo.db node server.js
+Nothing else is fetched from outside while you play: the font is bundled and everything else is served
+by our own server.
 
-Add `STORM=-4.6,137.4` (a latitude, longitude) to start a dust storm there when the server starts, to
-show storms in a demo. Otherwise storms come by themselves: mostly regional, mostly in southern spring
-and summer, the same for every player.
+### Research and real-world data (not APIs)
 
-Tests: `node test/sim.test.js`
+- **Mars clock:** Mars24 algorithm (Allison & McEwen 2000): real Mars date, season and local time.
+- **Spirulina growth and temperature:** Chaiklahan et al. 2007; Torzillo et al. 1991; Rosso et al. 1993.
+- **Light use and oxygen yield:** Cornet stoichiometry; Farges et al. 2009 (1.875 g O₂ per g biomass).
+- **Growth medium:** Zarrouk 1966. **Microscope shape:** Vonshak 1997.
+- **Human oxygen need:** NASA Life Support Baseline Values and Assumptions Document (Anderson et al.
+  2018): 0.818 kg O₂ per person per day.
+- **Dust storms:** modelled on Mars' dusty season (solar longitude 180–360).
 
-## Real-world data and the two APIs
+Every value in `sim/farm-sim.js` is tagged measured, derived, modelled, assumed or gameplay, and
+[docs/SIMULATION.md](docs/SIMULATION.md) lists each one with its source.
 
-The game uses exactly two outside APIs, both NASA's:
+### Boilerplate and AI use
 
-1. **NASA Mars Trek map tiles**, live while you play. The globe's terrain is streamed from
-   `trek.nasa.gov` (layer `Mars_Viking_MDIM21_ClrMosaic_global_232m`: the Viking MDIM 2.1 colour
-   mosaic, 232 m per pixel). If it can't be reached, the bundled `assets/mars-basemap.jpg` is shown.
-2. **NASA's Curiosity (MSL) weather feed**, downloaded once:
-   `mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json` (REMS data from CAB-INTA/CSIC).
-   `tools/prepare_weather.py` keeps one Mars year (sols 4270–4995, Aug 2024 – Aug 2026) as
-   `data/weather/rems_gale.json`, so every player's farm runs on the same record.
+- **Boilerplate:** none. No starter template or framework; every file was written for this project.
+- **Bundled third-party files:** Instrument Serif font (`fonts/`, SIL Open Font License, from the
+  Fontsource package). Map imagery from NASA/JPL-Caltech; weather from NASA/JPL-Caltech and
+  CAB-INTA/CSIC.
+- **AI-assisted code:** server and simulation code was written with
+  AI assistance from Claude (Anthropic), directed, reviewed and tested by our team. Design decisions and art are ours.
 
-Nothing else is fetched from outside: the font is bundled, and accounts and farms live on your server.
+## Prerequisites
 
-Other real-world data, from published work rather than APIs:
-- **Mars clock** (Mars24 algorithm, Allison & McEwen 2000): the real date, season and local time on
-  Mars. Sunlight, shadows and day and night follow it.
-- **Spirulina biology** (Chaiklahan 2007, Torzillo 1991, Cornet / Farges 2009, Rosso 1993, Zarrouk
-  1966, Vonshak 1997): growth rate, best temperature, night respiration, light use, oxygen per gram,
-  medium recipe, filament shape.
-- **Human oxygen need** (NASA BVAD, Anderson et al. 2018): 0.818 kg of O₂ per person per day, for the
-  "people it keeps breathing" number.
-- **Dust storms** follow the real dusty season on Mars (solar longitude 180–360).
+- [Node.js](https://nodejs.org) **22.13 or newer** (for the built-in SQLite). Nothing to install with npm.
+- A browser with **WebGL2** (any current Chrome, Edge, Firefox or Safari).
+- Internet for the live NASA terrain (optional: without it the bundled map is used).
+- Optional, only to rebuild the data files in `tools/`: Python 3 (plus numpy, scipy and Pillow for the
+  map).
 
-Every value is tagged in `sim/farm-sim.js` as measured, derived, modelled, assumed or gameplay;
-`docs/SIMULATION.md` lists them all with sources.
+```
+# Check your Node version (22.13+)
+node --version
+```
 
-Settings are in `CONFIG` at the top of `main.js` (tile size, farm size, zoom limits, dome size,
-shadow darkness). Art files, dome height and tunnel size are in `FARM`.
+## Build from source
 
-Terrain: NASA/JPL-Caltech Mars Trek (Viking MDIM 2.1 colour mosaic). Weather: NASA/JPL-Caltech, CAB-INTA/CSIC (Curiosity REMS).
+There is no build step: the server serves the files as they are.
+
+```
+# Clone the project
+git clone https://github.com/gencsis/projectALG-G.git && cd projectAL-G/mars-view
+
+# Run it (no dependencies to install), then open http://localhost:8000
+node server.js
+```
+
+Demo mode: time runs 600× faster (a panel turns muddy in about half an hour), no daily dome limit, its
+own database, and a dust storm over Gale Crater:
+
+```
+TIME_SPEED=600 BUILD_EVERY_HOURS=0 DB=data/demo.db STORM=-4.6,137.4 node server.js
+```
+
+Other options: `PORT=3000` for another port. Node prints a warning that SQLite is experimental; that's
+expected. Accounts and farms are saved in `data/algae.db` (delete it to start over). Friends on the same
+network can join at `http://<your computer's IP>:8000`.
+
+```
+# Run the simulation tests
+node test/sim.test.js
+```
+
+## Extras
+
+### How to play
+
+1. Register and log in. You get one starter culture.
+2. Zoom in until the tile grid shows and click a tile to build a dome (one new dome a day).
+3. Click your dome, pick a panel and fill it with your starter.
+4. Wait. It grows over days; watch the microscope until the water looks muddy.
+5. Take a starter from a muddy panel and fill an empty one. More panels, more oxygen.
+6. Keep it healthy: heater, lamps, CO₂ and nitrate. Turn up the lamps in dust storms.
+7. Help others: give starters to domes with a green +, and add caretakers in your account.
