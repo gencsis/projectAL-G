@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project AL-G</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="logged-out">
+  <canvas id="map" aria-label="Globe of Mars at true scale. Drag to turn, scroll or pinch to zoom, click a tile to place a farm."></canvas>
+  <canvas id="marks" aria-hidden="true"></canvas>
+
+  <section id="login" hidden>
+    <button id="loginClose" aria-label="Back to the map">✕</button>
+    <h1><img src="assets/ui/title.png" alt="Project AL-G"></h1>
+    <form id="loginForm">
+      <h2 id="loginTitle">Log in</h2>
+      <input id="user" placeholder="Username" autocomplete="username" required maxlength="24" aria-label="Username">
+      <input id="pass" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password">
+      <button id="loginGo">Login</button>
+      <p id="loginMsg" role="status"></p>
+      <p class="switch"><span id="switchText">New here?</span> <button type="button" id="switchMode">Register</button></p>
+    </form>
+  </section>
+
+  <div id="dust" class="pill" hidden title="Dust storm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></svg></div>
+  <button id="o2" class="pill" title="Oxygen made by everyone · click for more" aria-expanded="false" aria-controls="o2Info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="5"/><circle cx="17" cy="7" r="3"/></svg><b id="o2Total">0 g</b></button>
+  <section id="o2Info" class="pop" hidden aria-label="Oxygen on this server"></section>
+  <div id="tip" role="tooltip" hidden></div>
+
+  <div id="corner">
+    <button id="loginBtn" class="icon guest-only" aria-label="Log in" title="Log in"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+    <button id="meBtn" class="icon user-only" aria-label="Your account" title="Your account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+  </div>
+
+  <div id="tools" class="stack">
+    <button id="rotL" class="icon" aria-label="Rotate view left (Q)" title="Rotate view (Q)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v5h5"/><path d="M4.6 9A8 8 0 1 1 6 17"/></svg></button>
+    <button id="rotR" class="icon" aria-label="Rotate view right (E)" title="Rotate view (E)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v5h-5"/><path d="M19.4 9A8 8 0 1 0 18 17"/></svg></button>
+    <button id="turn" class="icon build" aria-label="Door side of your next dome (R)" title="Door side (R)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21V4h10v17M4 21h16"/><circle cx="14" cy="12.5" r="1"/></svg></button>
+    <button id="erase" class="icon build" aria-pressed="false" aria-label="Erase" title="Erase"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+  </div>
+  <button id="teleport" class="icon" hidden aria-label="Go to your dome" title="Go to your dome"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/></svg></button>
+  <div id="toast" class="pill" role="status" hidden></div>
+
+  <aside id="side" class="drawer" hidden aria-label="You">
+    <header><h2 id="who"></h2><button class="icon close" data-close="side" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+    <p id="count"></p>
+    <section class="team">
+      <h3>Teamwork</h3>
+      <label class="chk"><input id="asksHelp" type="checkbox"> Ask other players for starters</label>
+      <p class="sub" id="helped"></p>
+      <p class="sub">Caretakers can change settings and add nutrients in your domes:</p>
+      <ul id="caretakers"></ul>
+      <form id="addCaretaker" class="row"><input id="caretakerName" placeholder="Player name" maxlength="24" aria-label="Player name"><button>Add</button></form>
+      <p class="sub" id="caretakerFor"></p>
+    </section>
+    <p id="clock" class="sub"></p>
+    <button id="logout">Log out</button>
+    <p id="credit" class="sub"></p>
+  </aside>
+
+  <section id="lab" hidden>
+    <div class="backdrop" aria-hidden="true"></div>
+    <div id="labScene" aria-label="The lab inside the dome: four reactor panels"><img class="layer" src="assets/lab/room.png" alt="" draggable="false"></div>
+    <div id="labCloseup">
+      <img class="layer" src="assets/lab/closeup-empty.png" alt="" draggable="false">
+      <img id="closeupGreen" class="layer" src="assets/lab/closeup-green.png" alt="" draggable="false">
+    </div>
+    <button id="labBack" class="icon" aria-label="Back" title="Back (Esc)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button id="labInfo" class="icon" aria-label="Vitals" title="Vitals"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
+    <button id="labAction" class="pill action" hidden></button>
+    <aside id="labSide" class="drawer" hidden aria-label="Dome">
+      <header><h2 id="labTitle"></h2><button class="icon close" data-close="labSide" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+      <div id="labStatus"></div>
+    </aside>
+  </section>
+
+  <script src="sim/farm-sim.js"></script>
+  <script src="main.js"></script>
+  <script src="microscope.js"></script>
+  <script src="panel.js"></script>
+  <script src="lab.js"></script>
+  <script src="login.js"></script>
+  <script src="tutorial.js"></script>
+</body>
+</html>
